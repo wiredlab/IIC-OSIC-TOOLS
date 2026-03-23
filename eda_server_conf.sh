@@ -22,8 +22,9 @@
 # general settings for all users
 export DOCKER_EXTRA_PARAMS="--cpus 4 --memory 8G --dns 8.8.8.8 --restart always"
 export VNC_PORT=0
-export EDA_USER_HOME="/var/local/eda"
+export EDA_USER_HOME="$HOME/ed/vlsi/iic-osic-tools/eda"
 export EDA_CREDENTIAL_FILE="eda_user_credentials.json"
 export EDA_CONTAINER_PREFIX="iic-osic-eda"
 export EDA_IMAGE_TAG="latest"
-export EDA_USER_GROUP=2000
+export EDA_USER_GROUP=1002
+export NUMBER_USERS=15
