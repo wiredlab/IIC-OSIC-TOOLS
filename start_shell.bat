@@ -33,6 +33,15 @@ IF "%DESIGNS%"=="" (
 echo Using/creating designs directory: %DESIGNS%
 if not exist "%DESIGNS%" %ECHO_IF_DRY_RUN% mkdir "%DESIGNS%"
 
+SET MOUNTS=--mount "type=bind,src=%DESIGNS%,dst=/foss/designs"
+IF DEFINED COMMON_DESIGNS (
+  IF NOT EXIST "%COMMON_DESIGNS%" (
+    echo ERROR: COMMON_DESIGNS directory "%COMMON_DESIGNS%" does not exist!
+    exit /b 1
+  )
+  SET MOUNTS=%MOUNTS% --mount "type=bind,src=%COMMON_DESIGNS%,dst=/foss/designs/common,readonly"
+)
+
 IF "%DOCKER_USER%"=="" SET DOCKER_USER=hpretl
 IF "%DOCKER_IMAGE%"=="" SET DOCKER_IMAGE=iic-osic-tools
 IF "%DOCKER_TAG%"=="" SET DOCKER_TAG=latest
@@ -60,6 +69,6 @@ IF NOT ERRORLEVEL 1 (
     ) ELSE (
 	echo Container does not exist, pulling %DOCKER_USER%/%DOCKER_IMAGE%:%DOCKER_TAG% and creating %CONTAINER_NAME% ...
         %ECHO_IF_DRY_RUN% docker pull %DOCKER_USER%/%DOCKER_IMAGE%:%DOCKER_TAG%
-        %ECHO_IF_DRY_RUN% docker run -it --user %CONTAINER_USER%:%CONTAINER_GROUP% -e DISPLAY=%DISP% -e WAYLAND_DISPLAY=%WAYLAND_DISP% -e XDG_RUNTIME_DIR=/mnt/wslg/runtime-dir -e PULSE_SERVER=/mnt/wslg/PulseServer -v /run/desktop/mnt/host/wslg/.X11-unix:/tmp/.X11-unix -v /run/desktop/mnt/host/wslg:/mnt/wslg --device=/dev/dxg -v /usr/lib/wsl:/usr/lib/wsl %DOCKER_EXTRA_PARAMS% %PARAMS% -v "%DESIGNS%":/foss/designs --name %CONTAINER_NAME% %DOCKER_USER%/%DOCKER_IMAGE%:%DOCKER_TAG% -s /bin/bash
+        %ECHO_IF_DRY_RUN% docker run -it --user %CONTAINER_USER%:%CONTAINER_GROUP% -e DISPLAY=%DISP% -e WAYLAND_DISPLAY=%WAYLAND_DISP% -e XDG_RUNTIME_DIR=/mnt/wslg/runtime-dir -e PULSE_SERVER=/mnt/wslg/PulseServer -v /run/desktop/mnt/host/wslg/.X11-unix:/tmp/.X11-unix -v /run/desktop/mnt/host/wslg:/mnt/wslg --device=/dev/dxg -v /usr/lib/wsl:/usr/lib/wsl %DOCKER_EXTRA_PARAMS% %PARAMS% %MOUNTS% --name %CONTAINER_NAME% %DOCKER_USER%/%DOCKER_IMAGE%:%DOCKER_TAG% -s /bin/bash
     )
 )

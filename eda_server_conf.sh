@@ -23,6 +23,7 @@
 export DOCKER_EXTRA_PARAMS="--cpus 4 --memory 8G --dns 8.8.8.8 --restart always"
 export VNC_PORT=0
 export EDA_USER_HOME="$HOME/ed/vlsi/iic-osic-tools/eda"
+export COMMON_DESIGNS="$HOME/ed/vlsi/iic-osic-tools/eda/common"
 export EDA_CREDENTIAL_FILE="eda_user_credentials.json"
 export EDA_CONTAINER_PREFIX="iic-osic-eda"
 export EDA_IMAGE_TAG="latest"

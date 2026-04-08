@@ -35,6 +35,16 @@ if [ -z ${DESIGNS+z} ]; then
 	[ -z "${IIC_OSIC_TOOLS_QUIET}" ] && echo "[INFO] Design directory auto-set to $DESIGNS."
 fi
 
+DESIGN_MOUNTS=(--mount "type=bind,src=${DESIGNS},dst=/foss/designs")
+if [ -n "${COMMON_DESIGNS}" ]; then
+	if [ ! -d "${COMMON_DESIGNS}" ]; then
+		echo "[ERROR] COMMON_DESIGNS directory ${COMMON_DESIGNS} does not exist!"
+		exit 1
+	fi
+	DESIGN_MOUNTS+=(--mount "type=bind,src=${COMMON_DESIGNS},dst=/foss/designs/common,readonly")
+	[ -z "${IIC_OSIC_TOOLS_QUIET}" ] && echo "[INFO] Shared common design directory set to ${COMMON_DESIGNS}."
+fi
+
 # Set the host ports, and disable them with 0. Only used if not set as shell variables!
 if [ -z ${JUPYTER_PORT+z} ]; then
 	JUPYTER_PORT=8888
@@ -141,7 +151,7 @@ else
 	${ECHO_IF_DRY_RUN} docker pull "${DOCKER_USER}/${DOCKER_IMAGE}:${DOCKER_TAG}" > /dev/null
 	# Disable SC2086, $PARAMS must be globbed and splitted.
 	# shellcheck disable=SC2086
-	${ECHO_IF_DRY_RUN} docker run -d --user "${CONTAINER_USER}:${CONTAINER_GROUP}" $PARAMS -v "$DESIGNS":"/foss/designs":rw --name "${CONTAINER_NAME}" "${DOCKER_USER}/${DOCKER_IMAGE}:${DOCKER_TAG}" -s jupyter lab > /dev/null
+	${ECHO_IF_DRY_RUN} docker run -d --user "${CONTAINER_USER}:${CONTAINER_GROUP}" $PARAMS "${DESIGN_MOUNTS[@]}" --name "${CONTAINER_NAME}" "${DOCKER_USER}/${DOCKER_IMAGE}:${DOCKER_TAG}" -s jupyter lab > /dev/null
 	NB_STARTED=1
 fi
 

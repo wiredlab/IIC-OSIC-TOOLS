@@ -28,10 +28,14 @@
       - [4.4.2 For the Windows Batch Scripts](#442-for-the-windows-batch-scripts)
     - [4.5 Using as devcontainer](#45-using-as-devcontainer)
       - [4.5.1 Add it to project](#451-add-it-to-project)
-  - [5. Using the Container with](#5-using-the-container-with)
-    - [5.1 Podman](#51-podman)
-    - [5.2 Distrobox](#52-distrobox)
-  - [6. Support with Issues/Problems/Bugs](#6-support-with-issuesproblemsbugs)
+  - [5. EDA Server Admin Workflow](#5-eda-server-admin-workflow)
+    - [5.1 Persistent Shared Reference Directory](#51-persistent-shared-reference-directory)
+    - [5.2 First-Time Multi-User Setup](#52-first-time-multi-user-setup)
+    - [5.3 Deploying the Shared Mount to Existing Users](#53-deploying-the-shared-mount-to-existing-users)
+  - [6. Using the Container with](#6-using-the-container-with)
+    - [6.1 Podman](#61-podman)
+    - [6.2 Distrobox](#62-distrobox)
+  - [7. Support with Issues/Problems/Bugs](#7-support-with-issuesproblemsbugs)
 
 ## 1. How to Use These Open-Source (and Free) IC Design Tools
 
@@ -222,6 +226,8 @@ The following start scripts are intended as helper scripts for local or small-sc
 
 All user data is persistently placed in the directory pointed to by the environment variable `DESIGNS` (the default is `$HOME/eda/designs` for Linux/macOS and `%USERPROFILE%\eda\designs` for Windows, respectively).
 
+An optional second host directory can be exposed read-only inside the container by setting `COMMON_DESIGNS`. When set, it is mounted at `/foss/designs/common` and can be used for shared reference material that should stay immutable to container users.
+
 If a file `.designinit` is put in this directory, it is sourced last when starting the Docker environment. In this way, users can adapt settings to their needs.
 
 ### 4.2 Using VNC and noVNC
@@ -246,6 +252,7 @@ Both scripts will use default settings, which you can tweak by settings shell va
 
 - `DRY_RUN` (unset by default); if set to any value (also `0`, `false`, etc.), the start scripts print all executed commands instead of running. Useful for debugging/testing or just creating "template commands" for unique setups.
 - `DESIGNS=$HOME/eda/designs` (`DESIGNS=%USERPROFILE%\eda\designs` for `.bat`) sets the directory that holds your design files. This directory is mounted into the container on `/foss/designs`.
+- `COMMON_DESIGNS` (unset by default) sets an optional shared host directory that is mounted read-only on `/foss/designs/common`. The directory must already exist on the host.
 - `WEBSERVER_PORT=80` sets the port on which the Docker daemon will map the webserver port of the container to be reachable from localhost and the outside world. `0` disables the mapping.
 - `VNC_PORT=5901` sets the port on which the Docker daemon will map the VNC server port of the container to be reachable from localhost and the outside world. This is only required to access the UI with a different VNC client. `0` disabled the mapping.
 - `DOCKER_USER="hpretl"` username for the Docker Hub repository from which the images are pulled. Usually, no change is required.
@@ -281,6 +288,7 @@ The following environment variables are used for configuration:
 
 - `DRY_RUN` (unset by default), if set to any value (also `0`, `false`, etc.), makes the start scripts print all executed commands instead of running. Useful for debugging/testing or just creating "template commands" for unique setups.
 - `DESIGNS=$HOME/eda/designs` (`DESIGNS=%USERPROFILE%\eda\designs` for `.bat`) sets the directory that holds your design files. This directory is mounted into the container on `/foss/designs`.
+- `COMMON_DESIGNS` (unset by default) sets an optional shared host directory that is mounted read-only on `/foss/designs/common`. The directory must already exist on the host.
 - `DOCKER_USER="hpretl"` username for the Docker Hub repository from which the images are pulled. Usually, no change is required.
 - `DOCKER_IMAGE="iic-osic-tools"` Docker Hub image name to pull. Usually, no change is required.
 - `DOCKER_TAG="latest"` Docker Hub image tag. By default, it pulls the latest version; this might be handy to change if you want to match a specific Version set.
@@ -333,6 +341,7 @@ The second variant is to set the variables in the current shell session (not per
 
 ```bash
 export DESIGNS=/my/design/directory
+export COMMON_DESIGNS=/srv/iic-osic/common
 export DOCKER_USERNAME=another_user
 ./start_x.sh
 ```
@@ -345,6 +354,7 @@ In `CMD` you can't set the variables directly when running the script. So for th
 
 ```batch
 SET DESIGNS=\my\design\directory
+SET COMMON_DESIGNS=C:\shared\iic-osic\common
 SET DOCKER_USERNAME=another_user
 .\start_x.bat
 ```
@@ -368,12 +378,59 @@ Option 2: Alternatively you can directly just create the configuration file `.de
 
 Either way, the great thing is that you can now commit the file to repository and all developers will be asked if they want to reopen their development in this container, all they need is Docker and VS Code.
 
-## 5. Using the Container with
+## 5. EDA Server Admin Workflow
+
+The repository also contains helper scripts for running many per-user VNC containers from one host:
+
+- `eda_server_start.sh` creates user data directories, generates credentials, and creates the containers
+- `eda_server_restart.sh` recreates containers from the existing `eda_user_credentials.json`
+- `eda_server_stop.sh` stops and removes the per-user containers
+
+### 5.1 Persistent Shared Reference Directory
+
+For the multi-user EDA server setup, the shared reference directory is configured persistently in `eda_server_conf.sh`. A typical deployment might use:
+
+```bash
+export COMMON_DESIGNS="/srv/iic-osic/common"
+```
+
+This directory is mounted read-only into every user container at `/foss/designs/common`.
+
+If the directory already exists, `eda_server_start.sh` and `eda_server_restart.sh` log that it exists. If it does not exist, they create it before touching any containers. If creation fails, they abort.
+
+### 5.2 First-Time Multi-User Setup
+
+To create a 15-user deployment rooted at a dedicated server-managed directory, use:
+
+```bash
+sudo ./eda_server_start.sh -n 15 -g 1002 -l /srv/iic-osic/eda -c
+```
+
+This creates per-user directories such as `eda/u50001` through `eda/u50015`, generates fresh passwords, and writes `eda_user_credentials.json`.
+
+### 5.3 Deploying the Shared Mount to Existing Users
+
+Docker cannot add a new bind mount to an already-created container. To roll out `/foss/designs/common` to the current per-user deployment while keeping the existing `eda_user_credentials.json`, recreate the containers from the stored credential file:
+
+```bash
+sudo ./eda_server_stop.sh
+sudo ./eda_server_restart.sh -g 1002
+```
+
+This preserves:
+
+- the existing usernames
+- the existing passwords from `eda_user_credentials.json`
+- the existing user data directories under `eda/`
+
+It changes only the container instances themselves, which are recreated with the persistent `COMMON_DESIGNS` read-only mount.
+
+## 6. Using the Container with
 
 The IIC-OSIC-Tools are meant to be beginner friendly. If you have limited knowledge of the tools involved (Docker, Podman, etc..), we suggest you follow [4. Quick Launch for Designers](#4-quick-launch-for-designers).
 For container experts, there is also support for other container engines and additional tools, see the subsections below.
 
-### 5.1 Podman
+### 6.1 Podman
 
 [Podman](https://podman.io/) is a demonless, OCI compatible container engine, that supports rootless containers to contain privileges inside the container. Normal root containers are supported out of the box, the Docker-compatible CLI can be used with the start scripts without modification. Using rootless mode, we suggest using the user-namespace mode "keep-id". In this case, the host-user, launching the container, is copied to the container (same UID, GID, user and group name), preventing access issues between the container and mounted directories from the host. This can be achieved by using:
 
@@ -383,7 +440,7 @@ It should be noted, that the rootless mode can't bind to ports below 1024. This 
 
 `WEBSERVER_PORT=8080 DOCKER_EXTRA_PARAMS="--userns=keep-id" ./start_<mode>.sh`
 
-### 5.2 Distrobox
+### 6.2 Distrobox
 
 [Distrobox](https://distrobox.it) is a *fancy wrapper around Podman or Docker to create and start containers highly integrated with the hosts*. Like the `start_x` scripts, Distrobox manages the forwarding of X11/Wayland to the container, but allows for even more tight integration, by also forwarding the users home directory, and seamlessly integration other services like the systemd journal, D-Bus etc...
 Distrobox specifically mentions that its main focus lies on integration, and not on sandboxing and security.
@@ -395,7 +452,7 @@ A IIC-OSIC-Tools Distrobox can be started and accessed with:
 `distrobox create -n iic-osic-tools -i hpretl/iic-osic-tools:latest`
 `distrobox enter iic-osic-tools`
 
-## 6. Support with Issues/Problems/Bugs
+## 7. Support with Issues/Problems/Bugs
 
 We are open to your questions about this container and are very thankful for your input! If you run into a problem, and you are sure it is a bug, please let us know by following this routine:
 

@@ -33,6 +33,15 @@ IF NOT DEFINED DESIGNS SET DESIGNS=%DEFAULT_DESIGNS%
 echo Using/creating designs directory: %DESIGNS%
 if not exist "%DESIGNS%" %ECHO_IF_DRY_RUN% mkdir "%DESIGNS%" 
 
+SET MOUNTS=--mount "type=bind,src=%DESIGNS%,dst=/foss/designs"
+IF DEFINED COMMON_DESIGNS (
+  IF NOT EXIST "%COMMON_DESIGNS%" (
+    echo ERROR: COMMON_DESIGNS directory "%COMMON_DESIGNS%" does not exist!
+    exit /b 1
+  )
+  SET MOUNTS=%MOUNTS% --mount "type=bind,src=%COMMON_DESIGNS%,dst=/foss/designs/common,readonly"
+)
+
 IF NOT DEFINED JUPYTER_PORT SET JUPYTER_PORT=8888
 
 IF NOT DEFINED DOCKER_USER SET DOCKER_USER=hpretl
@@ -62,6 +71,6 @@ IF NOT ERRORLEVEL 1 (
     ) ELSE (
         echo Container does not exist, pulling %DOCKER_USER%/%DOCKER_IMAGE%:%DOCKER_TAG% and creating %CONTAINER_NAME% ...
 	%ECHO_IF_DRY_RUN% docker pull %DOCKER_USER%/%DOCKER_IMAGE%:%DOCKER_TAG%
-        %ECHO_IF_DRY_RUN% docker run -d --user %CONTAINER_USER%:%CONTAINER_GROUP% %PARAMS% -v "%DESIGNS%":/foss/designs --name %CONTAINER_NAME% %DOCKER_USER%/%DOCKER_IMAGE%:%DOCKER_TAG% -s jupyter lab --no-browser
+        %ECHO_IF_DRY_RUN% docker run -d --user %CONTAINER_USER%:%CONTAINER_GROUP% %PARAMS% %MOUNTS% --name %CONTAINER_NAME% %DOCKER_USER%/%DOCKER_IMAGE%:%DOCKER_TAG% -s jupyter lab --no-browser
     )
 )

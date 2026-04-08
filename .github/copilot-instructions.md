@@ -68,6 +68,7 @@ Scripts in repository root (`.sh` for Linux/macOS, `.bat` for Windows):
 
 **Environment variables** (set before running scripts):
 - `DESIGNS`: Host directory mounted to `/foss/designs` (default: `$HOME/eda/designs`)
+- `COMMON_DESIGNS`: Optional host directory mounted read-only to `/foss/designs/common`
 - `DOCKER_USER`, `DOCKER_IMAGE`, `DOCKER_TAG`: Image selection
 - `WEBSERVER_PORT`, `VNC_PORT`: Port mappings
 - `DRY_RUN`: Print commands without execution

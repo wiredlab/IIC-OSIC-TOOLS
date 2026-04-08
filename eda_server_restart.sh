@@ -73,6 +73,26 @@ shift $((OPTIND-1))
 
 # Print a bit of status information
 [ "$DEBUG" = 1 ] && echo "[INFO] User credentials are read from $EDA_CREDENTIAL_FILE."
+[ "$DEBUG" = 1 ] && [ -n "${COMMON_DESIGNS}" ] && echo "[INFO] Shared common designs directory is $COMMON_DESIGNS."
+
+_prepare_common_designs () {
+    if [ -z "${COMMON_DESIGNS}" ]; then
+        return 0
+    fi
+
+    if [ -d "${COMMON_DESIGNS}" ]; then
+        echo "[INFO] Shared common designs directory ${COMMON_DESIGNS} exists."
+        return 0
+    fi
+
+    echo "[INFO] Creating shared common designs directory ${COMMON_DESIGNS}."
+    if ! mkdir -p "${COMMON_DESIGNS}"; then
+        echo "[ERROR] Failed to create shared common designs directory ${COMMON_DESIGNS}"
+        return 1
+    fi
+
+    return 0
+}
 
 # Here is a function for the actual work
 _spin_up_server () {
@@ -125,6 +145,10 @@ fi
 
 if [ ! -f "$EDA_CREDENTIAL_FILE" ]; then
     echo "[ERROR] Credential file $EDA_CREDENTIAL_FILE not found!"
+    exit 1
+fi
+
+if ! _prepare_common_designs; then
     exit 1
 fi
 

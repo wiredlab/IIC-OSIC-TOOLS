@@ -70,6 +70,16 @@ if [ -z ${DESIGNS+z} ]; then
 	[ -z "${IIC_OSIC_TOOLS_QUIET}" ] && echo "[INFO] Design directory auto-set to $DESIGNS."
 fi
 
+DESIGN_MOUNTS=(--mount "type=bind,src=${DESIGNS},dst=/foss/designs")
+if [ -n "${COMMON_DESIGNS}" ]; then
+	if [ ! -d "${COMMON_DESIGNS}" ]; then
+		echo "[ERROR] COMMON_DESIGNS directory ${COMMON_DESIGNS} does not exist!"
+		exit 1
+	fi
+	DESIGN_MOUNTS+=(--mount "type=bind,src=${COMMON_DESIGNS},dst=/foss/designs/common,readonly")
+	[ -z "${IIC_OSIC_TOOLS_QUIET}" ] && echo "[INFO] Shared common design directory set to ${COMMON_DESIGNS}."
+fi
+
 if [ -z ${DOCKER_USER+z} ]; then
 	DOCKER_USER="hpretl"
 fi
@@ -281,7 +291,7 @@ else
 	${ECHO_IF_DRY_RUN} docker pull "${DOCKER_USER}/${DOCKER_IMAGE}:${DOCKER_TAG}" > /dev/null
 	# Disable SC2086, $PARAMS must be globbed and splitted.
 	# shellcheck disable=SC2086
-	${ECHO_IF_DRY_RUN} docker run -d --user "${CONTAINER_USER}:${CONTAINER_GROUP}" -e "DISPLAY=${DISP}" -v "${DESIGNS}":"/foss/designs":rw ${PARAMS} --name "${CONTAINER_NAME}" "${DOCKER_USER}/${DOCKER_IMAGE}:${DOCKER_TAG}"
+	${ECHO_IF_DRY_RUN} docker run -d --user "${CONTAINER_USER}:${CONTAINER_GROUP}" -e "DISPLAY=${DISP}" "${DESIGN_MOUNTS[@]}" ${PARAMS} --name "${CONTAINER_NAME}" "${DOCKER_USER}/${DOCKER_IMAGE}:${DOCKER_TAG}"
 fi
 
 if [ -n "${SOCAT_PID}" ]; then

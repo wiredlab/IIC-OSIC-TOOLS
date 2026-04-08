@@ -113,11 +113,31 @@ shift $((OPTIND-1))
 [ "$DEBUG" = 1 ] && echo "[INFO] Starting port number is $START_PORT."
 [ "$DEBUG" = 1 ] && echo "[INFO] User group is $EDA_USER_GROUP."
 [ "$DEBUG" = 1 ] && echo "[INFO] User home directories located in $EDA_USER_HOME."
+[ "$DEBUG" = 1 ] && [ -n "${COMMON_DESIGNS}" ] && echo "[INFO] Shared common designs directory is $COMMON_DESIGNS."
 [ "$DEBUG" = 1 ] && echo "[INFO] Number of instances is $NUMBER_USERS."
 [ "$DEBUG" = 1 ] && echo "[INFO] Number of password digits is $PASSWD_DIGITS."
 [ "$DEBUG" = 1 ] && echo "[INFO] User credentials are stored in $EDA_CREDENTIAL_FILE."
 [ "$DEBUG" = 1 ] && echo "[INFO] Container name prefix is $EDA_CONTAINER_PREFIX."
 [ "$DEBUG" = 1 ] && echo "[INFO] Docker image tag is $EDA_IMAGE_TAG."
+
+_prepare_common_designs () {
+    if [ -z "${COMMON_DESIGNS}" ]; then
+        return 0
+    fi
+
+    if [ -d "${COMMON_DESIGNS}" ]; then
+        echo "[INFO] Shared common designs directory ${COMMON_DESIGNS} exists."
+        return 0
+    fi
+
+    echo "[INFO] Creating shared common designs directory ${COMMON_DESIGNS}."
+    if ! mkdir -p "${COMMON_DESIGNS}"; then
+        echo "[ERROR] Failed to create shared common designs directory ${COMMON_DESIGNS}"
+        return 1
+    fi
+
+    return 0
+}
 
 # Here is a function for the actual work
 _spin_up_server () {
@@ -288,6 +308,10 @@ fi
 if ! command -v jq >/dev/null 2>&1; then
   echo "[ERROR] The program jq is not installed!"
   exit 1
+fi
+
+if ! _prepare_common_designs; then
+    exit 1
 fi
 
 # Here is the loop
