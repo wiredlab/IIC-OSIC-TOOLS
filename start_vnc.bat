@@ -39,7 +39,7 @@ IF DEFINED COMMON_DESIGNS (
     echo ERROR: COMMON_DESIGNS directory "%COMMON_DESIGNS%" does not exist!
     exit /b 1
   )
-  SET MOUNTS=%MOUNTS% --mount "type=bind,src=%COMMON_DESIGNS%,dst=/foss/designs/common,readonly"
+  SET MOUNTS=%MOUNTS% --mount "type=bind,src=%COMMON_DESIGNS%,dst=/foss/common,readonly"
 )
 
 IF "%DOCKER_USER%"=="" SET DOCKER_USER=hpretl

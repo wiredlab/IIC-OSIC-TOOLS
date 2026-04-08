@@ -19,13 +19,17 @@
 # SPDX-License-Identifier: Apache-2.0
 # ========================================================================
 
+# Resolve defaults relative to this repository so running the admin scripts via
+# sudo does not silently switch them to /root/...
+EDA_SERVER_CONF_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
 # general settings for all users
-export DOCKER_EXTRA_PARAMS="--cpus 4 --memory 8G --dns 8.8.8.8 --restart always"
-export VNC_PORT=0
-export EDA_USER_HOME="$HOME/ed/vlsi/iic-osic-tools/eda"
-export COMMON_DESIGNS="$HOME/ed/vlsi/iic-osic-tools/eda/common"
-export EDA_CREDENTIAL_FILE="eda_user_credentials.json"
-export EDA_CONTAINER_PREFIX="iic-osic-eda"
-export EDA_IMAGE_TAG="latest"
-export EDA_USER_GROUP=1002
-export NUMBER_USERS=15
+export DOCKER_EXTRA_PARAMS="${DOCKER_EXTRA_PARAMS:---cpus 4 --memory 8G --dns 8.8.8.8 --restart always}"
+export VNC_PORT="${VNC_PORT:-0}"
+export EDA_USER_HOME="${EDA_USER_HOME:-$EDA_SERVER_CONF_DIR/eda}"
+export COMMON_DESIGNS="${COMMON_DESIGNS:-$EDA_SERVER_CONF_DIR/eda/common}"
+export EDA_CREDENTIAL_FILE="${EDA_CREDENTIAL_FILE:-$EDA_SERVER_CONF_DIR/eda_user_credentials.json}"
+export EDA_CONTAINER_PREFIX="${EDA_CONTAINER_PREFIX:-iic-osic-eda}"
+export EDA_IMAGE_TAG="${EDA_IMAGE_TAG:-latest}"
+export EDA_USER_GROUP="${EDA_USER_GROUP:-1002}"
+export NUMBER_USERS="${NUMBER_USERS:-15}"

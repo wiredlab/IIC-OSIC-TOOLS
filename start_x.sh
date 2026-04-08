@@ -76,7 +76,7 @@ if [ -n "${COMMON_DESIGNS}" ]; then
 		echo "[ERROR] COMMON_DESIGNS directory ${COMMON_DESIGNS} does not exist!"
 		exit 1
 	fi
-	DESIGN_MOUNTS+=(--mount "type=bind,src=${COMMON_DESIGNS},dst=/foss/designs/common,readonly")
+	DESIGN_MOUNTS+=(--mount "type=bind,src=${COMMON_DESIGNS},dst=/foss/common,readonly")
 	[ -z "${IIC_OSIC_TOOLS_QUIET}" ] && echo "[INFO] Shared common design directory set to ${COMMON_DESIGNS}."
 fi
 

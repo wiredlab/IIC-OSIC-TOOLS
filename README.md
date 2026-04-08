@@ -226,7 +226,7 @@ The following start scripts are intended as helper scripts for local or small-sc
 
 All user data is persistently placed in the directory pointed to by the environment variable `DESIGNS` (the default is `$HOME/eda/designs` for Linux/macOS and `%USERPROFILE%\eda\designs` for Windows, respectively).
 
-An optional second host directory can be exposed read-only inside the container by setting `COMMON_DESIGNS`. When set, it is mounted at `/foss/designs/common` and can be used for shared reference material that should stay immutable to container users.
+An optional second host directory can be exposed read-only inside the container by setting `COMMON_DESIGNS`. When set, it is mounted at `/foss/common` and can be used for shared reference material that should stay immutable to container users. Update the host directory referenced by `COMMON_DESIGNS` itself; it is not stored inside the per-user `DESIGNS` tree.
 
 If a file `.designinit` is put in this directory, it is sourced last when starting the Docker environment. In this way, users can adapt settings to their needs.
 
@@ -252,7 +252,7 @@ Both scripts will use default settings, which you can tweak by settings shell va
 
 - `DRY_RUN` (unset by default); if set to any value (also `0`, `false`, etc.), the start scripts print all executed commands instead of running. Useful for debugging/testing or just creating "template commands" for unique setups.
 - `DESIGNS=$HOME/eda/designs` (`DESIGNS=%USERPROFILE%\eda\designs` for `.bat`) sets the directory that holds your design files. This directory is mounted into the container on `/foss/designs`.
-- `COMMON_DESIGNS` (unset by default) sets an optional shared host directory that is mounted read-only on `/foss/designs/common`. The directory must already exist on the host.
+- `COMMON_DESIGNS` (unset by default) sets an optional shared host directory that is mounted read-only on `/foss/common`. The directory must already exist on the host.
 - `WEBSERVER_PORT=80` sets the port on which the Docker daemon will map the webserver port of the container to be reachable from localhost and the outside world. `0` disables the mapping.
 - `VNC_PORT=5901` sets the port on which the Docker daemon will map the VNC server port of the container to be reachable from localhost and the outside world. This is only required to access the UI with a different VNC client. `0` disabled the mapping.
 - `DOCKER_USER="hpretl"` username for the Docker Hub repository from which the images are pulled. Usually, no change is required.
@@ -288,7 +288,7 @@ The following environment variables are used for configuration:
 
 - `DRY_RUN` (unset by default), if set to any value (also `0`, `false`, etc.), makes the start scripts print all executed commands instead of running. Useful for debugging/testing or just creating "template commands" for unique setups.
 - `DESIGNS=$HOME/eda/designs` (`DESIGNS=%USERPROFILE%\eda\designs` for `.bat`) sets the directory that holds your design files. This directory is mounted into the container on `/foss/designs`.
-- `COMMON_DESIGNS` (unset by default) sets an optional shared host directory that is mounted read-only on `/foss/designs/common`. The directory must already exist on the host.
+- `COMMON_DESIGNS` (unset by default) sets an optional shared host directory that is mounted read-only on `/foss/common`. The directory must already exist on the host.
 - `DOCKER_USER="hpretl"` username for the Docker Hub repository from which the images are pulled. Usually, no change is required.
 - `DOCKER_IMAGE="iic-osic-tools"` Docker Hub image name to pull. Usually, no change is required.
 - `DOCKER_TAG="latest"` Docker Hub image tag. By default, it pulls the latest version; this might be handy to change if you want to match a specific Version set.
@@ -394,7 +394,7 @@ For the multi-user EDA server setup, the shared reference directory is configure
 export COMMON_DESIGNS="/srv/iic-osic/common"
 ```
 
-This directory is mounted read-only into every user container at `/foss/designs/common`.
+This directory is mounted read-only into every user container at `/foss/common`.
 
 If the directory already exists, `eda_server_start.sh` and `eda_server_restart.sh` log that it exists. If it does not exist, they create it before touching any containers. If creation fails, they abort.
 
@@ -410,7 +410,7 @@ This creates per-user directories such as `eda/u50001` through `eda/u50015`, gen
 
 ### 5.3 Deploying the Shared Mount to Existing Users
 
-Docker cannot add a new bind mount to an already-created container. To roll out `/foss/designs/common` to the current per-user deployment while keeping the existing `eda_user_credentials.json`, recreate the containers from the stored credential file:
+Docker cannot add a new bind mount to an already-created container. To roll out `/foss/common` to the current per-user deployment while keeping the existing `eda_user_credentials.json`, recreate the containers from the stored credential file:
 
 ```bash
 sudo ./eda_server_stop.sh

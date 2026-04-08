@@ -22,6 +22,8 @@
 # Get configuration variables
 # shellcheck source=/dev/null
 source eda_server_conf.sh
+# shellcheck source=/dev/null
+source eda_server_utils.sh
 
 # Variables for script control
 DEBUG=0
@@ -148,15 +150,21 @@ _spin_up_server () {
     local username="$1"
     local passwd="$2"
     local webport="$3"
+    local container_user
 
     DESIGNS=$(realpath "$EDA_USER_HOME/$username") && export DESIGNS
     export VNC_PW="$passwd"
     export CONTAINER_NAME="$EDA_CONTAINER_PREFIX-$username"
     export WEBSERVER_PORT="$webport"
+    if ! container_user=$(eda_server_container_user_from_username "$username"); then
+        echo "[ERROR] Failed to derive container user ID from username $username"
+        return 1
+    fi
+    export CONTAINER_USER="$container_user"
     export CONTAINER_GROUP="$EDA_USER_GROUP"
     export DOCKER_TAG="$EDA_IMAGE_TAG"
 
-    [ "$DEBUG" = 1 ] && echo "[INFO] Spinning up container $CONTAINER_NAME using data directory $DESIGNS, webserver port $WEBSERVER_PORT, VNC password $VNC_PW, group-ID $CONTAINER_GROUP, container tag $DOCKER_TAG."
+    [ "$DEBUG" = 1 ] && echo "[INFO] Spinning up container $CONTAINER_NAME using data directory $DESIGNS, webserver port $WEBSERVER_PORT, VNC password $VNC_PW, user-ID $CONTAINER_USER, group-ID $CONTAINER_GROUP, container tag $DOCKER_TAG."
 
     if [ "$(docker ps -q -f name="${CONTAINER_NAME}")" ]; then
         if [ "$DO_KILL" = 0 ]; then
@@ -193,6 +201,11 @@ _spin_up_server () {
             echo "[ERROR] Failed to create directory $DESIGNS"
             return 1
         fi
+    fi
+
+    if ! chown -R "${CONTAINER_USER}:${CONTAINER_GROUP}" "$DESIGNS"; then
+        echo "[ERROR] Failed to assign ${CONTAINER_USER}:${CONTAINER_GROUP} ownership to $DESIGNS"
+        return 1
     fi
 
     # Now spinning up the EDA container using standard scripts
